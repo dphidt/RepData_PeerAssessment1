@@ -1,16 +1,8 @@
----
-title: 'Reproducible Research: Activity Monitoring'
-author: "Andrew M."
-date: "8/6/2017"
-output: html_document
----
+# Reproducible Research: Peer Assessment 1
+Andrew M.  
+8/6/2017  
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-options(scipen=1, digits=2)
-library(dplyr)
-library(ggplot2)
-```
+
 
 In this analysis, we take a look at data from a personal activity monitoring device
 with measures the number of steps taken by the wearer, in five-minute intervals over
@@ -31,10 +23,18 @@ and a total of 17568 observations.
 
 First we load in the data for processing, converting the `date` field into a `Date`:
 
-```{r}
+
+```r
 data <- read.csv(unz("activity.zip", "activity.csv"), header=T)
 data$date <- as.Date(data$date)
 str(data)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 ## What is mean total number of steps taken per day?
@@ -42,37 +42,44 @@ str(data)
 Now, we calculate the total number of steps taken on each day, ignoring any missing
 values, and histogram them:
 
-```{r}
+
+```r
 d <- data %>% group_by(date) %>% summarize(totalSteps=sum(steps))
 medianSteps <- median(d$totalSteps, na.rm=T)
 meanSteps <- mean(d$totalSteps, na.rm=T)
 hist(d$totalSteps, main='', xlab='Number of Steps', breaks=8)
 ```
 
-The mean number of total steps per day is `r meanSteps` and the median is
-`r medianSteps`.
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+
+The mean number of total steps per day is 10766.19 and the median is
+10765.
 
 ## What is the average daily activity pattern?
 
-```{r}
+
+```r
 d <- data %>% group_by(interval) %>% summarize(meanSteps=mean(steps, na.rm=T))
 maxSteps <- which.max(d$meanSteps)
 plot(d$interval, d$meanSteps, main='', xlab='Interval', ylab='Mean Number of Steps', type='l')
 ```
 
-The five-minute interval with the maximum number of steps (`r d$meanSteps[[maxSteps]]`) is
-the `r maxSteps`th interval, `r d$interval[[maxSteps]]`.
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+The five-minute interval with the maximum number of steps (206.17) is
+the 104th interval, 835.
 
 ## Imputing missing values
 
 We now consider how to deal with missing values in the dataset. First, we ask how many
 rows with missing values there are.
 
-```{r}
+
+```r
 nmissing <- nrow(data) - sum(complete.cases(data))
 ```
 
-The number of rows with missing data is `r nmissing`.
+The number of rows with missing data is 2304.
 
 Now, we employ a strategy for handling the missing data in our subsequent analysis.
 
@@ -92,7 +99,8 @@ Now, we employ a strategy for handling the missing data in our subsequent analys
 
 Here we replace missing values with the mean number of steps for the given
 time interval, averaged across all days:
-```{r}
+
+```r
 dt <- data %>% group_by(interval) %>% mutate(meanSteps=mean(steps, na.rm=T)) %>% ungroup
 badValues <- is.na(dt$steps)
 dt$steps[badValues] = dt$meanSteps[badValues]
@@ -100,15 +108,18 @@ dt$steps[badValues] = dt$meanSteps[badValues]
 
 With the missing values replaced, we remake the histogram above:
 
-```{r}
+
+```r
 dt2 <- dt %>% group_by(date) %>% summarize(totalSteps=sum(steps))
 medianSteps <- median(dt2$totalSteps, na.rm=T)
 meanSteps <- mean(dt2$totalSteps, na.rm=T)
 hist(dt2$totalSteps, main='', xlab='Number of Steps', breaks=8)
 ```
 
-The mean number of total steps per day is `r meanSteps` and the median is
-`r medianSteps`. For this choice of imputing, the mean is unchanged and the
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+
+The mean number of total steps per day is 10766.19 and the median is
+10766.19. For this choice of imputing, the mean is unchanged and the
 median now coincides with the mean, and is no longer an integer since we
 filled in steps with an average.
 
@@ -118,7 +129,8 @@ Finally, we investigate whether the activity patterns are different on weekdays
 and weekends. To begin, we create a new column which denotes whether a day is
 a weekend or weekday:
 
-```{r}
+
+```r
 dtw <- dt %>% mutate(daytype=grepl('Sat|Sun', weekdays(date)))
 dtw$daytype[dtw$daytype==F] = 'weekday'
 dtw$daytype[dtw$daytype==T] = 'weekend'
@@ -128,7 +140,8 @@ dtw$datype <- as.factor(dtw$daytype)
 Then, we summarize by the day type (weekend/weekday) and the time interval (like
 the time series above) to create a panel plot:
 
-```{r}
+
+```r
 dtw2 <- dtw %>% group_by(daytype, interval) %>% summarize(meanSteps=mean(steps))
 p <- ggplot(dtw2, aes(interval, meanSteps)) +
        geom_line() +
@@ -138,6 +151,8 @@ p <- ggplot(dtw2, aes(interval, meanSteps)) +
        ylab('Mean Number of Steps')
 print(p)
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 As we can see in the plot, the time structure of the activity is similar. However, it
 appears the subject does (quite reasonably) get moving a little later, and generally
